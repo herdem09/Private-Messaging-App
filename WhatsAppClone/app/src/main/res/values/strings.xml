@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">WhatsApp Clone</string>
+    <string name="enter_name">İsminizi girin</string>
+    <string name="join_chat">Sohbete Katıl</string>
+    <string name="type_message">Mesaj yazın...</string>
+    <string name="send">Gönder</string>
+    <string name="chat">Chat</string>
+    <string name="connected">Bağlı</string>
+    <string name="disconnected">Bağlantı yok</string>
+    <string name="new_message">Yeni mesaj</string>
+</resources>
