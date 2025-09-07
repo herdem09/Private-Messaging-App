@@ -1,0 +1,110 @@
+# Promtail configuration for ServerChat log shipping
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Main Server logs
+  - job_name: main-server
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: main-server
+          service: serverchat-main
+          __path__: /var/log/main-server/*.log
+
+  # Chat Server logs
+  - job_name: chat-server-general
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: chat-server-general
+          service: serverchat-chat
+          server_name: general
+          __path__: /var/log/chat-server-1/*.log
+
+  - job_name: chat-server-gaming
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: chat-server-gaming
+          service: serverchat-chat
+          server_name: gaming
+          __path__: /var/log/chat-server-2/*.log
+
+  # Nginx logs
+  - job_name: nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          service: nginx
+          __path__: /var/log/nginx/*.log
+
+  # System logs
+  - job_name: system
+    journal:
+      max_age: 12h
+      labels:
+        job: systemd-journal
+        service: system
+    relabel_configs:
+      - source_labels: ['__journal__systemd_unit']
+        target_label: 'unit'
+
+# Pipeline stages for log processing
+  - job_name: main-server-structured
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: main-server
+          service: serverchat-main
+          __path__: /var/log/main-server/*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: time_local
+            level: level
+            message: message
+            service: service
+      - labels:
+          level:
+          service:
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02T15:04:05.000Z'
+
+  - job_name: nginx-json
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          service: nginx
+          __path__: /var/log/nginx/access.log
+    pipeline_stages:
+      - json:
+          expressions:
+            remote_addr: remote_addr
+            status: status
+            request: request
+            request_time: request_time
+      - labels:
+          status:
+      - template:
+          source: status_class
+          template: '{{ if eq .status "200" }}2xx{{ else if eq .status "404" }}4xx{{ else if eq .status "500" }}5xx{{ else }}other{{ end }}'
+      - labels:
+          status_class:

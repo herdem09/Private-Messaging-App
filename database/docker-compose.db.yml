@@ -1,0 +1,185 @@
+version: '3.8'
+
+services:
+  # MongoDB Primary Database
+  mongodb-primary:
+    image: mongo:6.0
+    container_name: serverchat-mongodb-primary
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-secure_admin_password_123}
+      MONGO_INITDB_DATABASE: serverchat-main
+    volumes:
+      - mongodb_primary_data:/data/db
+      - mongodb_primary_config:/data/configdb
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - ./mongodb.conf:/etc/mongo/mongod.conf:ro
+      - mongodb_logs:/var/log/mongodb
+    command: ["mongod", "--config", "/etc/mongo/mongod.conf"]
+    networks:
+      - serverchat-db-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/serverchat-main --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MongoDB Secondary (for read replicas in production)
+  mongodb-secondary:
+    image: mongo:6.0
+    container_name: serverchat-mongodb-secondary
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-secure_admin_password_123}
+    volumes:
+      - mongodb_secondary_data:/data/db
+      - mongodb_secondary_config:/data/configdb
+      - ./mongodb.conf:/etc/mongo/mongod.conf:ro
+    command: ["mongod", "--config", "/etc/mongo/mongod.conf", "--replSet", "serverchat-rs"]
+    networks:
+      - serverchat-db-network
+    depends_on:
+      - mongodb-primary
+    profiles:
+      - replica
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: serverchat-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_password_123}
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - serverchat-db-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MongoDB Express (Web GUI)
+  mongo-express:
+    image: mongo-express:1.0.0
+    container_name: serverchat-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb-primary
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD:-secure_admin_password_123}
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USER:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASS:-admin123}
+      ME_CONFIG_SITE_BASEURL: /mongo-express/
+    depends_on:
+      - mongodb-primary
+    networks:
+      - serverchat-db-network
+    profiles:
+      - admin-tools
+
+  # Redis Commander (Web GUI for Redis)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: serverchat-redis-commander
+    restart: unless-stopped
+    ports:
+      - "8082:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:${REDIS_PASSWORD:-redis_password_123}
+      HTTP_USER: ${REDIS_COMMANDER_USER:-admin}
+      HTTP_PASSWORD: ${REDIS_COMMANDER_PASS:-admin123}
+    depends_on:
+      - redis
+    networks:
+      - serverchat-db-network
+    profiles:
+      - admin-tools
+
+  # Database backup service
+  db-backup:
+    image: mongo:6.0
+    container_name: serverchat-db-backup
+    restart: "no"
+    volumes:
+      - ./backups:/backups
+      - ./backup-restore.sh:/usr/local/bin/backup-restore.sh:ro
+    environment:
+      MONGO_HOST: mongodb-primary
+      MONGO_PORT: 27017
+      MONGO_DB: serverchat-main
+      MONGO_USER: admin
+      MONGO_PASS: ${MONGO_ROOT_PASSWORD:-secure_admin_password_123}
+    networks:
+      - serverchat-db-network
+    depends_on:
+      - mongodb-primary
+    profiles:
+      - backup
+    # Run backup daily at 2 AM
+    # Use: docker-compose --profile backup run --rm db-backup /usr/local/bin/backup-restore.sh backup --compress
+    command: ["sh", "-c", "while true; do sleep 86400; /usr/local/bin/backup-restore.sh backup --compress --quiet; done"]
+
+  # MongoDB monitoring with Mongo Stats
+  mongo-stats:
+    image: mongo:6.0
+    container_name: serverchat-mongo-stats
+    restart: unless-stopped
+    volumes:
+      - ./monitoring:/monitoring
+    environment:
+      MONGO_HOST: mongodb-primary
+      MONGO_PORT: 27017
+      MONGO_DB: serverchat-main
+      MONGO_USER: admin
+      MONGO_PASS: ${MONGO_ROOT_PASSWORD:-secure_admin_password_123}
+    networks:
+      - serverchat-db-network
+    depends_on:
+      - mongodb-primary
+    profiles:
+      - monitoring
+    command: |
+      sh -c "
+        while true; do
+          echo '=== MongoDB Stats - $(date) ===' >> /monitoring/mongo-stats.log
+          mongosh --host $$MONGO_HOST:$$MONGO_PORT -u $$MONGO_USER -p $$MONGO_PASS --authenticationDatabase admin --eval '
+            db.getSiblingDB(\"serverchat-main\").stats()
+          ' >> /monitoring/mongo-stats.log 2>&1
+          sleep 300  # Every 5 minutes
+        done
+      "
+
+volumes:
+  mongodb_primary_data:
+    driver: local
+  mongodb_primary_config:
+    driver: local
+  mongodb_secondary_data:
+    driver: local
+  mongodb_secondary_config:
+    driver: local
+  mongodb_logs:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  serverchat-db-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

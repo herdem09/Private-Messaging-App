@@ -1,148 +1,352 @@
-# ServerChat - Discord Benzeri Mesajlaşma Uygulaması
+# 🚀 ServerChat - Discord Benzeri Mesajlaşma Sistemi
 
-ServerChat, kullanıcıların kendi sunucularını oluşturabileceği ve yönetebileceği Discord benzeri bir mesajlaşma uygulamasıdır.
+ServerChat, kullanıcıların kendi sunucularını oluşturabileceği ve yönetebileceği Discord benzeri bir mesajlaşma platformudur. Sistem, Android uygulaması, ana sunucu ve dağıtık chat sunucularından oluşur.
 
-## Özellikler
+## 📱 Proje Yapısı
 
-### 🖥️ Sunucu Yönetimi
-- **Sunucu Oluşturma**: Kullanıcılar kendi sunucularını kaydettirebilir
-- **Ana Sunucu Kontrolü**: Tüm sunucular ana sunucu üzerinden yönetilir
-- **IP Tabanlı Bağlantı**: Sunucular IP adresi ve port ile erişilebilir
+```
+ServerChat/
+├── 📱 Android App/          # Kotlin ile yazılmış mobil uygulama
+├── 🖥️  main-server/         # Ana sunucu (Node.js/Express/MongoDB)
+├── 💬 chat-server/          # Chat sunucuları (Node.js/Socket.IO)
+├── 🗄️  database/            # Veritabanı konfigürasyonları
+├── 🐳 deployment/           # Docker ve deployment araçları
+├── 🔧 nginx/               # Reverse proxy konfigürasyonu
+├── 📊 monitoring/          # İzleme ve metrikler
+└── 💾 backup/              # Yedekleme servisleri
+```
 
-### 🔒 Güvenlik Sistemi
-- **Şifre Koruması**: Sunucular opsiyonel şifre ile korunabilir
-- **Ban Sistemi**: Çok fazla yanlış deneme yapan cihazlar otomatik banlanır
-- **Spam Koruması**: Aşırı mesaj gönderen kullanıcılar geçici olarak banlanır
-- **Cihaz Takibi**: Her cihaz benzersiz ID ile takip edilir
+## ✨ Özellikler
 
-### 💬 Mesajlaşma
+### 📱 Android Uygulaması
+- **Modern UI**: Jetpack Compose ile Discord benzeri arayüz
 - **Real-time Chat**: WebSocket ile anlık mesajlaşma
-- **Kullanıcı Listesi**: Çevrimiçi kullanıcıları görme
-- **Sistem Mesajları**: Kullanıcı giriş/çıkış bildirimleri
-- **Mesaj Geçmişi**: Önceki mesajları görme
+- **Sunucu Yönetimi**: Sunucu oluşturma ve katılma
+- **Güvenlik**: Cihaz bazlı ban sistemi ve spam koruması
+- **Bildirimler**: Arkaplan bildirimleri
+- **Offline Support**: Yerel veri saklama
 
-### 📱 Bildirimler
-- **Arkaplan Servisi**: Uygulama kapalıyken bile bildirim alma
-- **Push Notifications**: Yeni mesaj bildirimleri
-- **Sunucu Durumu**: Bağlantı durumu takibi
+### 🖥️ Ana Sunucu
+- **Sunucu Kaydı**: Chat sunucularının merkezi kaydı
+- **API Gateway**: RESTful API servisleri
+- **İstatistikler**: Gerçek zamanlı sunucu istatistikleri
+- **Health Check**: Sunucu durumu izleme
+- **Rate Limiting**: DDoS koruması
 
-## Kurulum
+### 💬 Chat Sunucuları
+- **WebSocket**: Real-time mesajlaşma
+- **Kullanıcı Yönetimi**: Online kullanıcı takibi
+- **Ban Sistemi**: Otomatik ve manuel ban yönetimi
+- **Spam Koruması**: Mesaj hızı kontrolü
+- **Admin Panel**: Web tabanlı yönetim arayüzü
+
+### 🔒 Güvenlik
+- **JWT Authentication**: Güvenli kimlik doğrulama
+- **Rate Limiting**: API ve mesaj hızı kontrolü
+- **Input Validation**: Girdi doğrulama ve sanitizasyon
+- **Ban Management**: Cihaz ve IP bazlı banlama
+- **Encryption**: Şifre hash'leme ve güvenli iletişim
+
+## 🚀 Hızlı Başlangıç
 
 ### Gereksinimler
-- Android Studio Arctic Fox veya üzeri
-- Android SDK 24 (Android 7.0) veya üzeri
-- Java 8 veya üzeri
+- **Docker & Docker Compose**: Containerization
+- **Android Studio**: Mobil uygulama geliştirme
+- **Node.js 16+**: Backend geliştirme (opsiyonel)
+- **MongoDB**: Veritabanı
+- **Redis**: Cache ve session yönetimi
 
-### Adımlar
+### 1. Projeyi Klonlayın
+```bash
+git clone <repository-url>
+cd ServerChat
+```
 
-1. **Projeyi İndirin**
-   ```bash
-   git clone <repository-url>
-   cd ServerChat
-   ```
+### 2. Environment Konfigürasyonu
+```bash
+# Ana konfigürasyon dosyasını oluşturun
+cp .env.example .env
 
-2. **Android Studio'da Açın**
-   - Android Studio'yu açın
-   - "Open an existing project" seçin
-   - İndirdiğiniz proje klasörünü seçin
+# Güvenlik ayarlarını değiştirin
+nano .env
+```
 
-3. **Gradle Sync**
-   - Android Studio otomatik olarak Gradle sync yapacak
-   - Eğer yapmıyorsa: `File > Sync Project with Gradle Files`
+### 3. Backend Sistemini Başlatın
+```bash
+# Tüm servisleri başlat (ana sunucu + chat sunucuları + veritabanları)
+docker-compose -f docker-compose.full.yml up -d
 
-4. **Ana Sunucu URL'sini Ayarlayın**
-   - `app/src/main/java/com/serverchat/app/network/RetrofitClient.kt` dosyasını açın
-   - `BASE_URL` değişkenini kendi ana sunucunuzun URL'si ile değiştirin
+# Veya deployment script ile
+./deployment/deploy.sh deploy
+```
 
-5. **Uygulamayı Çalıştırın**
-   - Bir Android cihaz bağlayın veya emulator başlatın
-   - `Run` butonuna tıklayın
+### 4. Android Uygulamasını Çalıştırın
+```bash
+# Android Studio'da projeyi açın
+# app/ klasörünü Android Studio'da açın
+# Gradle sync tamamlandıktan sonra Run butonuna tıklayın
+```
 
-## Kullanım
+### 5. Durumu Kontrol Edin
+```bash
+# Servislerin durumunu kontrol et
+./deployment/deploy.sh status
 
-### Sunucu Kaydetme
-1. Ana ekranda "Sunucu Kaydet" butonuna tıklayın
-2. Sunucu bilgilerini girin:
-   - Sunucu adı
-   - IP adresi
-   - Port (varsayılan: 8080)
-   - Şifre (opsiyonel)
-3. "Kaydet" butonuna tıklayın
+# Health check
+curl http://localhost:3000/api/health
+```
 
-### Sunucuya Bağlanma
-1. "Sunucuya Katıl" butonuna tıklayın
-2. Listeden bir sunucu seçin
-3. Kullanıcı adınızı girin
-4. Gerekirse şifreyi girin
-5. "Bağlan" butonuna tıklayın
+## 📋 Servisler ve Portlar
 
-### Mesajlaşma
-1. Sunucuya başarıyla bağlandıktan sonra chat ekranı açılır
-2. Alt kısımdaki metin kutusuna mesajınızı yazın
-3. "Gönder" butonuna tıklayın veya Enter'a basın
-4. Sağ üstteki kullanıcı ikonuna tıklayarak çevrimiçi kullanıcıları görün
+| Servis | Port | Açıklama |
+|--------|------|----------|
+| Ana Sunucu | 3000 | Main server API |
+| General Chat | 8080 | Genel chat sunucusu |
+| Gaming Hub | 8081 | Oyun chat sunucusu |
+| Study Group | 8082 | Çalışma grubu |
+| MongoDB | 27017 | Veritabanı |
+| Redis | 6379 | Cache |
+| Nginx | 80/443 | Reverse proxy |
+| Mongo Express | 8090 | DB admin |
+| Grafana | 3001 | Monitoring |
 
-## Teknik Detaylar
+## 🏗️ Mimari
 
-### Mimari
-- **MVVM Pattern**: ViewModel ile UI logic ayrımı
-- **Repository Pattern**: Veri katmanı soyutlaması
-- **Jetpack Compose**: Modern UI framework
-- **Coroutines**: Asenkron işlemler için
-- **WebSocket**: Real-time komunikasyon
+### Sistem Mimarisi
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Android App   │◄──►│   Nginx Proxy    │◄──►│   Main Server   │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+         │                        │                        │
+         │              ┌─────────▼────────┐               │
+         │              │  Chat Servers    │               │
+         │              │ ┌──────────────┐ │               │
+         └──────────────►│ │ General Chat │ │◄──────────────┘
+                        │ │ Gaming Hub   │ │
+                        │ │ Study Group  │ │
+                        │ └──────────────┘ │
+                        └──────────────────┘
+                                 │
+                        ┌────────▼────────┐
+                        │   Databases     │
+                        │ ┌─────────────┐ │
+                        │ │  MongoDB    │ │
+                        │ │  Redis      │ │
+                        │ └─────────────┘ │
+                        └─────────────────┘
+```
 
-### Kullanılan Teknolojiler
-- **Kotlin**: Ana programlama dili
-- **Jetpack Compose**: UI framework
-- **Retrofit**: HTTP client
-- **WebSocket**: Real-time messaging
-- **SharedPreferences**: Yerel veri saklama
-- **Material Design 3**: UI tasarım sistemi
+### Data Flow
+1. **Android App** → Ana sunucuya kayıt olur
+2. **Ana Sunucu** → Kullanılabilir chat sunucularını listeler
+3. **Android App** → Chat sunucusuna bağlanır
+4. **Chat Sunucu** → Ana sunucuya durumunu bildirir
+5. **WebSocket** → Real-time mesajlaşma
 
-### API Endpoints
+## 🛠️ Geliştirme
 
-#### Ana Sunucu API'ları
-- `POST /servers/register` - Sunucu kaydetme
-- `GET /servers` - Kullanılabilir sunucuları listeleme
-- `POST /servers/{id}/connect` - Sunucuya bağlanma
+### Android Uygulaması
+```bash
+cd app/
+# Android Studio ile açın veya
+./gradlew assembleDebug
+```
 
-#### Sunucu API'ları
-- `GET /servers/{id}/info` - Sunucu bilgilerini alma
-- `GET /servers/{id}/messages` - Mesaj geçmişi
-- `POST /servers/{id}/ban` - Kullanıcı banlama
-- `WebSocket /ws` - Real-time mesajlaşma
+### Backend Servisleri
+```bash
+# Ana sunucu
+cd main-server/
+npm install
+npm run dev
 
-## Güvenlik Önlemleri
+# Chat sunucusu
+cd chat-server/
+npm install
+npm run dev
+```
 
-### Ban Sistemi
-- 5 yanlış şifre denemesinde 30 dakika ban
-- Dakikada 10'dan fazla mesajda 60 dakika ban
-- Cihaz bazlı takip ile ban kaçırma engellenir
+### Veritabanı
+```bash
+cd database/
+./database-setup.sh setup
+```
 
-### Veri Güvenliği
-- Tüm kullanıcı girdileri sanitize edilir
-- IP adresi ve port validasyonu
-- Rate limiting ile spam önlenir
-- Cihaz ID'leri hash'lenerek saklanır
+## 📊 Monitoring ve İzleme
 
-## Sorun Giderme
+### Grafana Dashboard
+- **URL**: http://localhost:3001
+- **Login**: admin / (GRAFANA_PASSWORD)
+- **Dashboards**: Sistem metrikleri, chat istatistikleri
 
-### Bağlantı Sorunları
-- İnternet bağlantınızı kontrol edin
-- Sunucu IP ve port bilgilerinin doğru olduğundan emin olun
-- Firewall ayarlarını kontrol edin
+### Prometheus Metrics
+- **URL**: http://localhost:9090
+- **Metrics**: Uygulama ve sistem metrikleri
 
-### Bildirim Sorunları
-- Uygulama izinlerini kontrol edin
-- Batarya optimizasyonundan çıkarın
-- Bildirim kanalı ayarlarını kontrol edin
+### Log Aggregation
+```bash
+# Tüm logları görüntüle
+docker-compose -f docker-compose.full.yml logs -f
 
-### Performans Sorunları
-- Uygulamayı yeniden başlatın
-- Cihazın boş hafızasını kontrol edin
-- Ağ bağlantı kalitesini kontrol edin
+# Belirli servis logları
+docker-compose -f docker-compose.full.yml logs -f main-server
+```
 
-## Katkıda Bulunma
+## 💾 Backup ve Restore
+
+### Otomatik Backup
+```bash
+# Backup servisini aktifleştir
+docker-compose -f docker-compose.full.yml --profile backup up -d
+
+# Manuel backup
+./database/backup-restore.sh backup --compress
+```
+
+### Restore İşlemi
+```bash
+# Backup'ları listele
+./database/backup-restore.sh list
+
+# Restore et
+./database/backup-restore.sh restore backup-file.archive.gz
+```
+
+## 🚀 Production Deployment
+
+### SSL/TLS Konfigürasyonu
+```bash
+# SSL sertifikaları
+mkdir -p nginx/ssl/
+# Sertifikalarınızı nginx/ssl/ klasörüne kopyalayın
+```
+
+### Production Environment
+```bash
+# Production konfigürasyonu
+cp .env.example .env.production
+# Production değerlerini ayarlayın
+
+# Deploy
+./deployment/deploy.sh deploy --env production
+```
+
+Detaylı deployment rehberi için: [README-DEPLOYMENT.md](README-DEPLOYMENT.md)
+
+## 🔧 Konfigürasyon
+
+### Environment Variables
+
+#### Ana Konfigürasyon (.env)
+```env
+# Güvenlik
+JWT_SECRET=your-super-secret-jwt-key
+MONGO_ROOT_PASSWORD=secure-password
+REDIS_PASSWORD=redis-password
+
+# Sunucu ayarları
+SERVER_IP_1=192.168.1.100
+SERVER_IP_2=192.168.1.101
+SERVER_IP_3=192.168.1.102
+
+# Admin paneli
+ADMIN_KEY_1=general-admin-key
+ADMIN_KEY_2=gaming-admin-key
+ADMIN_KEY_3=study-admin-key
+```
+
+#### Android Uygulaması
+`app/src/main/java/com/serverchat/app/network/RetrofitClient.kt`:
+```kotlin
+private const val BASE_URL = "http://your-main-server.com/api/"
+```
+
+## 📱 Android App Özellikleri
+
+### Ekranlar
+1. **Ana Ekran**: Sunucu listesi ve kayıt
+2. **Sunucu Kayıt**: Yeni sunucu oluşturma
+3. **Sunucu Listesi**: Mevcut sunucuları görüntüleme
+4. **Chat Ekranı**: Real-time mesajlaşma
+
+### Özellikler
+- **Real-time Messaging**: WebSocket ile anlık mesaj
+- **User Management**: Online kullanıcı listesi
+- **Server Discovery**: Otomatik sunucu keşfi
+- **Security**: Cihaz bazlı kimlik doğrulama
+- **Notifications**: Arkaplan bildirimleri
+- **Offline Mode**: Yerel veri saklama
+
+## 🛡️ Güvenlik Önlemleri
+
+### API Güvenliği
+- **Rate Limiting**: İstek hızı kontrolü
+- **Input Validation**: Girdi doğrulama
+- **Authentication**: JWT tabanlı kimlik doğrulama
+- **CORS**: Cross-origin istek kontrolü
+
+### Chat Güvenliği
+- **Spam Protection**: Mesaj hızı kontrolü
+- **Auto Ban**: Otomatik banlama sistemi
+- **Content Filtering**: İçerik filtresi
+- **Device Tracking**: Cihaz bazlı takip
+
+## 📈 Performans
+
+### Optimizasyonlar
+- **Connection Pooling**: Veritabanı bağlantı havuzu
+- **Caching**: Redis ile cache
+- **Compression**: Gzip sıkıştırma
+- **Load Balancing**: Nginx ile yük dağıtımı
+
+### Ölçeklendirme
+```bash
+# Chat sunucularını ölçeklendir
+./deployment/deploy.sh scale chat-server-general 3
+
+# Database replica set
+docker-compose -f docker-compose.full.yml --profile replica up -d
+```
+
+## 🐛 Troubleshooting
+
+### Yaygın Sorunlar
+
+#### Bağlantı Sorunları
+```bash
+# Servis durumunu kontrol et
+./deployment/deploy.sh status
+
+# Logları incele
+./deployment/deploy.sh logs service-name
+
+# Health check
+curl -f http://localhost:3000/api/health
+```
+
+#### Android Uygulama Sorunları
+1. **Gradle Sync**: Android Studio'da Sync Project
+2. **API URL**: RetrofitClient.kt'de BASE_URL kontrol et
+3. **Network**: Internet izni ve clear text traffic
+4. **Dependencies**: build.gradle dependencies kontrol et
+
+#### Database Sorunları
+```bash
+# MongoDB durumu
+docker-compose exec mongodb mongosh --eval "db.runCommand('ping')"
+
+# Redis durumu
+docker-compose exec redis redis-cli ping
+```
+
+## 📚 Dokümantasyon
+
+- **[Android App](app/README.md)**: Mobil uygulama detayları
+- **[Main Server](main-server/README.md)**: Ana sunucu API
+- **[Chat Server](chat-server/README.md)**: Chat sunucusu
+- **[Database](database/README.md)**: Veritabanı konfigürasyonu
+- **[Deployment](README-DEPLOYMENT.md)**: Production deployment
+
+## 🤝 Katkıda Bulunma
 
 1. Fork edin
 2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
@@ -150,14 +354,61 @@ ServerChat, kullanıcıların kendi sunucularını oluşturabileceği ve yönete
 4. Push edin (`git push origin feature/amazing-feature`)
 5. Pull Request oluşturun
 
-## Lisans
+### Development Workflow
+```bash
+# Backend değişiklikleri
+cd main-server/ # veya chat-server/
+npm run dev
+
+# Android değişiklikleri
+# Android Studio'da Run/Debug
+
+# Database değişiklikleri
+cd database/
+./database-setup.sh restart
+```
+
+## 📄 Lisans
 
 Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için `LICENSE` dosyasına bakın.
 
-## İletişim
+## 🎯 Roadmap
 
-Sorularınız için lütfen issue açın veya iletişime geçin.
+### v1.1
+- [ ] Voice chat desteği
+- [ ] File sharing
+- [ ] Emoji reactions
+- [ ] User profiles
+
+### v1.2
+- [ ] Video chat
+- [ ] Screen sharing
+- [ ] Bot API
+- [ ] Plugins system
+
+### v2.0
+- [ ] Web client
+- [ ] Desktop apps
+- [ ] Advanced moderation
+- [ ] Analytics dashboard
+
+## 📞 Destek
+
+- **Issues**: GitHub Issues sayfasında sorun bildirebilirsiniz
+- **Discussions**: GitHub Discussions'da soru sorabilirsiniz
+- **Documentation**: Her klasörde detaylı README dosyaları bulunmaktadır
 
 ---
 
-**Not**: Bu uygulama demo amaçlıdır. Üretim ortamında kullanmadan önce ek güvenlik önlemleri alınması önerilir.
+## 🎉 Başarıyla Kuruldu!
+
+Tüm servisler çalışıyorsa:
+
+1. **Ana Sunucu**: http://localhost:3000
+2. **Chat Sunucuları**: http://localhost:8080, 8081, 8082
+3. **Admin Panel**: http://localhost:8090 (Mongo Express)
+4. **Monitoring**: http://localhost:3001 (Grafana)
+
+Android uygulamanızı çalıştırın ve mesajlaşmaya başlayın! 🚀
+
+**Not**: Production ortamında deployment yapmadan önce [README-DEPLOYMENT.md](README-DEPLOYMENT.md) dosyasını mutlaka okuyun.

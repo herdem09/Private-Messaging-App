@@ -1,0 +1,399 @@
+version: '3.8'
+
+# Full ServerChat deployment with all services
+# This compose file includes main server, chat servers, databases, and monitoring
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: serverchat-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-secure_password_123}
+      MONGO_INITDB_DATABASE: serverchat-main
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+      - ./database/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - ./database/mongodb.conf:/etc/mongo/mongod.conf:ro
+      - mongodb_logs:/var/log/mongodb
+    command: ["mongod", "--config", "/etc/mongo/mongod.conf"]
+    networks:
+      - serverchat-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/serverchat-main --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: serverchat-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_password_123}
+    volumes:
+      - redis_data:/data
+      - ./database/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - serverchat-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Main Server
+  main-server:
+    build: 
+      context: ./main-server
+      dockerfile: Dockerfile
+    container_name: serverchat-main-server
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/serverchat-main
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8080}
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-change-this}
+      - BCRYPT_ROUNDS=12
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX_REQUESTS=100
+    volumes:
+      - main_server_logs:/app/logs
+    networks:
+      - serverchat-network
+    depends_on:
+      - mongodb
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Chat Server 1 - General
+  chat-server-general:
+    build:
+      context: ./chat-server
+      dockerfile: Dockerfile
+    container_name: serverchat-chat-general
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - SERVER_NAME=General Chat
+      - SERVER_DESCRIPTION=A friendly general chat server
+      - SERVER_IP=${SERVER_IP_1:-192.168.1.100}
+      - MAX_USERS=100
+      - MAIN_SERVER_URL=http://main-server:3000
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-change-this}
+      - ADMIN_KEY=${ADMIN_KEY_1:-admin-key-change-this}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
+      - SPAM_MESSAGES_PER_MINUTE=10
+      - SPAM_BAN_DURATION=60
+    volumes:
+      - chat_server_1_logs:/app/logs
+    networks:
+      - serverchat-network
+    depends_on:
+      - main-server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Chat Server 2 - Gaming (with password)
+  chat-server-gaming:
+    build:
+      context: ./chat-server
+      dockerfile: Dockerfile
+    container_name: serverchat-chat-gaming
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - SERVER_NAME=Gaming Hub
+      - SERVER_DESCRIPTION=Chat server for gamers
+      - SERVER_IP=${SERVER_IP_2:-192.168.1.101}
+      - SERVER_PASSWORD=${GAMING_SERVER_PASSWORD:-gaming123}
+      - MAX_USERS=50
+      - MAIN_SERVER_URL=http://main-server:3000
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-change-this}
+      - ADMIN_KEY=${ADMIN_KEY_2:-gaming-admin-key-change-this}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
+      - SPAM_MESSAGES_PER_MINUTE=15
+      - SPAM_BAN_DURATION=30
+      - OWNER_EMAIL=gaming@example.com
+    volumes:
+      - chat_server_2_logs:/app/logs
+    networks:
+      - serverchat-network
+    depends_on:
+      - main-server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Chat Server 3 - Study Group
+  chat-server-study:
+    build:
+      context: ./chat-server
+      dockerfile: Dockerfile
+    container_name: serverchat-chat-study
+    restart: unless-stopped
+    ports:
+      - "8082:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - SERVER_NAME=Study Group
+      - SERVER_DESCRIPTION=Quiet space for studying together
+      - SERVER_IP=${SERVER_IP_3:-192.168.1.102}
+      - SERVER_PASSWORD=${STUDY_SERVER_PASSWORD:-study2023}
+      - MAX_USERS=25
+      - MAIN_SERVER_URL=http://main-server:3000
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-change-this}
+      - ADMIN_KEY=${ADMIN_KEY_3:-study-admin-key-change-this}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
+      - SPAM_MESSAGES_PER_MINUTE=5
+      - SPAM_BAN_DURATION=120
+      - BANNED_WORDS=loud,party,game
+      - OWNER_EMAIL=study@example.com
+    volumes:
+      - chat_server_3_logs:/app/logs
+    networks:
+      - serverchat-network
+    depends_on:
+      - main-server
+    profiles:
+      - full
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Nginx Reverse Proxy and Load Balancer
+  nginx:
+    image: nginx:alpine
+    container_name: serverchat-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    networks:
+      - serverchat-network
+    depends_on:
+      - main-server
+      - chat-server-general
+      - chat-server-gaming
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MongoDB Express (Database Admin)
+  mongo-express:
+    image: mongo-express:1.0.0
+    container_name: serverchat-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8090:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD:-secure_password_123}
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USER:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASS:-admin123}
+      ME_CONFIG_SITE_BASEURL: /mongo-express/
+    depends_on:
+      - mongodb
+    networks:
+      - serverchat-network
+    profiles:
+      - admin
+
+  # Redis Commander (Redis Admin)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: serverchat-redis-commander
+    restart: unless-stopped
+    ports:
+      - "8091:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:${REDIS_PASSWORD:-redis_password_123}
+      HTTP_USER: ${REDIS_COMMANDER_USER:-admin}
+      HTTP_PASSWORD: ${REDIS_COMMANDER_PASS:-admin123}
+    depends_on:
+      - redis
+    networks:
+      - serverchat-network
+    profiles:
+      - admin
+
+  # Monitoring with Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: serverchat-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - serverchat-network
+    profiles:
+      - monitoring
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: serverchat-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-grafana123}
+      GF_USERS_ALLOW_SIGN_UP: false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - serverchat-network
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+
+  # Log aggregation with Loki
+  loki:
+    image: grafana/loki:latest
+    container_name: serverchat-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - serverchat-network
+    profiles:
+      - monitoring
+
+  # Log shipping with Promtail
+  promtail:
+    image: grafana/promtail:latest
+    container_name: serverchat-promtail
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml:ro
+      - main_server_logs:/var/log/main-server:ro
+      - chat_server_1_logs:/var/log/chat-server-1:ro
+      - chat_server_2_logs:/var/log/chat-server-2:ro
+      - nginx_logs:/var/log/nginx:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - serverchat-network
+    depends_on:
+      - loki
+    profiles:
+      - monitoring
+
+  # Backup Service
+  backup-service:
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    container_name: serverchat-backup
+    restart: unless-stopped
+    environment:
+      - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-0 2 * * *}
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - MONGO_USER=${MONGO_ROOT_USERNAME:-admin}
+      - MONGO_PASS=${MONGO_ROOT_PASSWORD:-secure_password_123}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+      - S3_BUCKET=${S3_BACKUP_BUCKET:-}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY:-}
+      - S3_SECRET_KEY=${S3_SECRET_KEY:-}
+    volumes:
+      - backup_data:/backups
+      - ./database/backup-restore.sh:/usr/local/bin/backup-restore.sh:ro
+    networks:
+      - serverchat-network
+    depends_on:
+      - mongodb
+    profiles:
+      - backup
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  mongodb_logs:
+    driver: local
+  redis_data:
+    driver: local
+  main_server_logs:
+    driver: local
+  chat_server_1_logs:
+    driver: local
+  chat_server_2_logs:
+    driver: local
+  chat_server_3_logs:
+    driver: local
+  nginx_logs:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  loki_data:
+    driver: local
+  backup_data:
+    driver: local
+
+networks:
+  serverchat-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16

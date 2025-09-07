@@ -1,0 +1,17 @@
+# ServerChat Backup Crontab
+# Runs automated backups according to schedule
+
+# Default: Daily backup at 2 AM
+0 2 * * * /scripts/backup.sh backup
+
+# Weekly cleanup on Sundays at 3 AM
+0 3 * * 0 /scripts/backup.sh cleanup
+
+# Health check every hour
+0 * * * * /scripts/backup.sh health
+
+# Monthly verification of latest backup (first day of month at 4 AM)
+0 4 1 * * /scripts/backup.sh verify $(ls -t /backups/*.archive.gz | head -n1)
+
+# Log rotation (keep last 30 days of logs)
+0 1 * * * find /var/log/backup -name "backup-*.log" -mtime +30 -delete
