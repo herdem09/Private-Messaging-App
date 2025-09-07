@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    
+    <!-- Primary Colors -->
+    <color name="primary">#FF5865F2</color>
+    <color name="primary_dark">#FF4752C4</color>
+    <color name="primary_light">#FF7289DA</color>
+    
+    <!-- Background Colors -->
+    <color name="background_primary">#FF36393F</color>
+    <color name="background_secondary">#FF2F3136</color>
+    <color name="background_tertiary">#FF202225</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#FFB9BBBE</color>
+    <color name="text_muted">#FF72767D</color>
+    
+    <!-- Status Colors -->
+    <color name="online">#FF43B581</color>
+    <color name="offline">#FF747F8D</color>
+    <color name="error">#FFED4245</color>
+    <color name="warning">#FFFAA61A</color>
+    
+    <!-- Chat Colors -->
+    <color name="message_own">#FF5865F2</color>
+    <color name="message_other">#FF40444B</color>
+    <color name="input_background">#FF40444B</color>
+</resources>
