@@ -1,0 +1,54 @@
+<resources>
+    <string name="app_name">ServerChat</string>
+    
+    <!-- Main Activity -->
+    <string name="welcome_title">ServerChat\'e Hoş Geldin</string>
+    <string name="welcome_subtitle">Kendi sunucunu oluştur veya bir sunucuya katıl</string>
+    <string name="register_server">Sunucu Kaydet</string>
+    <string name="join_server">Sunucuya Katıl</string>
+    <string name="my_servers">Sunucularım</string>
+    
+    <!-- Server Registration -->
+    <string name="register_server_title">Yeni Sunucu Kaydı</string>
+    <string name="server_name">Sunucu Adı</string>
+    <string name="server_ip">Sunucu IP Adresi</string>
+    <string name="server_port">Port</string>
+    <string name="server_password">Sunucu Şifresi (Opsiyonel)</string>
+    <string name="register">Kaydet</string>
+    <string name="cancel">İptal</string>
+    
+    <!-- Server Join -->
+    <string name="join_server_title">Sunucuya Katıl</string>
+    <string name="username">Kullanıcı Adı</string>
+    <string name="password">Şifre</string>
+    <string name="connect">Bağlan</string>
+    <string name="connecting">Bağlanıyor...</string>
+    
+    <!-- Chat -->
+    <string name="type_message">Mesaj yazın...</string>
+    <string name="send">Gönder</string>
+    <string name="online_users">Çevrimiçi Kullanıcılar</string>
+    
+    <!-- Errors -->
+    <string name="error_empty_fields">Lütfen tüm alanları doldurun</string>
+    <string name="error_invalid_ip">Geçersiz IP adresi</string>
+    <string name="error_connection_failed">Bağlantı başarısız</string>
+    <string name="error_wrong_password">Yanlış şifre</string>
+    <string name="error_banned">Bu cihaz banlandı</string>
+    <string name="error_server_full">Sunucu dolu</string>
+    <string name="error_network">Ağ hatası</string>
+    
+    <!-- Notifications -->
+    <string name="notification_new_message">Yeni mesaj</string>
+    <string name="notification_channel_name">Chat Bildirimleri</string>
+    <string name="notification_channel_description">Yeni mesajlar için bildirimler</string>
+    
+    <!-- General -->
+    <string name="yes">Evet</string>
+    <string name="no">Hayır</string>
+    <string name="ok">Tamam</string>
+    <string name="retry">Tekrar Dene</string>
+    <string name="disconnect">Bağlantıyı Kes</string>
+    <string name="leave_server">Sunucudan Ayrıl</string>
+    <string name="delete_server">Sunucuyu Sil</string>
+</resources>
